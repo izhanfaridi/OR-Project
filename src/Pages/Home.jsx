@@ -7,6 +7,7 @@ import { ggc_calculation } from '../Functions_formulas/GGC'
 import { useNavigate } from 'react-router-dom'
 import { Oval } from 'react-loader-spinner'
 import {BsFillFileBarGraphFill} from 'react-icons/bs'
+import {SiMicrosoftexcel} from 'react-icons/si'
 
 function Home() {
     const navigate = useNavigate();
@@ -114,7 +115,8 @@ function Home() {
     return (
         // bg-[#1A1D21]
         <div className='h-screen bg-gradient-to-bl from-[#21252B] to-[#2A323D] to-[#2D3C55]'>
-            <BsFillFileBarGraphFill onClick={()=>{navigate('/graphs')}} className='absolute right-10 text-5xl text-white top-8'/>
+            <BsFillFileBarGraphFill onClick={()=>{navigate('/randomNum')}} className='absolute right-28 text-5xl text-white top-8 hover:text-gray-400'/>
+            <SiMicrosoftexcel onClick={()=>{navigate('/graphs')}} className='absolute right-10 text-5xl text-white top-8 hover:text-gray-400'/>
             <div className='bg-gradient-to-bl from-[#21252B] to-[#2A323D] to-[#2D3C55] flex flex-row flex-wrap justify-evenly content-start items-baseline h-full py-5'>
                 <h1 className='text-center text-white text-2xl py-6 font-bold'>Operation Research Simulator</h1>
                 <div className='border-t w-full flex flex-row justify-center items-center py-10'>
