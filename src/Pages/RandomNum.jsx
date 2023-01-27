@@ -2,11 +2,19 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Oval } from 'react-loader-spinner'
 import '../Styles/styles.css'
 import noDataLogo from '../Assets/imgs/nodata_svg.svg'
+import CanvasJSReact from '../Assets/canvasjs.react';
+
+var CanvasJS = CanvasJSReact.CanvasJS;
+var CanvasJSChart = CanvasJSReact.CanvasJSChart;
+
 function RandomNum() {
 
+
+
+
     const [loading, setLoading] = useState(false);
-    const [initialData, setInitialData] = useState([]);
     const [calculatedData, setCalculatedData] = useState([]);
+    const [performanceObj, setPerformanceObj] = useState([]);
     const [lambda, setLambda] = useState();
     const [meu, setMeu] = useState();
     const [CustomerNum, setCustomerNum] = useState(1);
@@ -14,16 +22,65 @@ function RandomNum() {
 
     const e = 2.718281828;
 
+
+    const options = {
+        animationEnabled: true,
+        theme: "dark2",
+        title: {
+            text: "Turnaround Time, Wait Time and Service"
+        },
+        axisY: {
+            title: "Time in Minutes"
+        },
+        toolTip: {
+            shared: true
+        },
+        data: [{
+            type: "spline",
+            name: "Turnaround Time",
+            showInLegend: true,
+            dataPoints: calculatedData.map((elem) => {
+                return { y: elem.turnaroundTime, label: elem.customerId }
+            })
+        },
+        {
+            type: "spline",
+            name: "Wait Time",
+            showInLegend: true,
+            dataPoints: calculatedData.map((elem) => {
+                return { y: elem.waitTime, label: elem.customerId }
+            })
+        }, {
+            type: "spline",
+            name: "Service Time",
+            showInLegend: true,
+            dataPoints: calculatedData.map((elem) => {
+                return { y: elem.serviceTime, label: elem.customerId }
+            })
+        }]
+    }
+
     const initialRender = useRef(true)
+    const initialRenderPerformance = useRef(true)
     useEffect(() => {
         if (initialRender.current) {
             initialRender.current = false;
         } else {
-            console.log("Final Data", calculatedData);
+            performanceMeasures();
 
         }
 
     }, [calculatedData])
+
+    useEffect(() => {
+        if (initialRenderPerformance.current) {
+            initialRenderPerformance.current = false;
+        } else {
+            console.log("performance Data", performanceObj);
+
+        }
+
+    }, [performanceObj])
 
 
     function factorialize(num) {
@@ -136,7 +193,7 @@ function RandomNum() {
             let responseTime = startTime - arrival;
             let obj = {
                 //interArrival: interArrivals[i],
-                customerId: "C"+(i+1),
+                customerId: "C" + (i + 1),
                 arrivalTime: arrival,
                 serviceTime: serviceTimes[i],
                 server: serverNum + 1,
@@ -147,14 +204,43 @@ function RandomNum() {
                 responseTime,
             };
             servers[serverNum] += serviceTimes[i];
-            setCalculatedData((prev)=>[...prev,obj])
+            setCalculatedData((prev) => [...prev, obj])
         });
     }
 
+
+    const performanceMeasures = () => {
+        for (let i = 1; i <= serverQty; i++) {
+            const array = calculatedData.filter(elem => elem.server === i)
+            let server = i
+            let avgServiceTime = ((array.map(elem => { return elem.serviceTime })).reduce((partialSum, a) => partialSum + a, 0)) / CustomerNum
+            let avgArrivalTime = ((array.map(elem => { return elem.arrivalTime })).reduce((partialSum, a) => partialSum + a, 0)) / CustomerNum
+            let avgTurnaround = ((array.map(elem => { return elem.turnaroundTime })).reduce((partialSum, a) => partialSum + a, 0)) / CustomerNum
+            let avgWaitTime = ((array.map(elem => { return elem.waitTime })).reduce((partialSum, a) => partialSum + a, 0)) / CustomerNum
+            let avgWaitTimeWhoWait = ((array.map(elem => { return elem.waitTime })).reduce((partialSum, a) => partialSum + a, 0)) / (array.filter(elem => elem.waitTime !== 0).length)
+            let avgResponseTime = ((array.map(elem => { return elem.responseTime })).reduce((partialSum, a) => partialSum + a, 0)) / CustomerNum
+
+            setPerformanceObj(prev => [...prev, {
+                avgArrivalTime,
+                avgServiceTime,
+                avgTurnaround,
+                avgWaitTime,
+                avgWaitTimeWhoWait,
+                avgResponseTime,
+                server
+            }])
+        }
+
+
+    }
+
     const calculate = () => {
+        setLoading(true)
         //setInitialData([])
         setCalculatedData([])
+        setPerformanceObj([])
         cumulativeFrequencyGenerate();
+        setLoading(false)
 
     }
 
@@ -166,7 +252,7 @@ function RandomNum() {
     return (
         <div className='h-screen bg-gradient-to-bl from-[#21252B] to-[#2A323D] to-[#2D3C55]'>
             <div className='flex h-1/2'>
-                <div className='flex border border-gray-600 m-4 rounded-lg flex-row flex-wrap text-white text-lg font-bold w-1/4 p-2 shadow-xl'>
+                <div className='flex border border-gray-600 m-3 rounded-lg flex-row flex-wrap text-white text-lg font-bold w-1/4 p-2 shadow-xl'>
                     <div className='flex justify-start items-center w-full'>
                         <label className='pt-3'>Enter Mean λ</label>
                         <input
@@ -235,7 +321,7 @@ function RandomNum() {
                         )
                     }
                 </div>
-                <div className='text-white border border-gray-600 grow overflow-y-auto m-4 scrollbar-hide rounded-lg shadow-xl'>
+                <div className='text-white border border-gray-600 grow overflow-y-auto m-3 scrollbar-hide rounded-lg shadow-xl'>
                     {
                         loading ? (
                             <div className='flex flex-col justify-center items-center h-full'>
@@ -292,28 +378,28 @@ function RandomNum() {
                                                         <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
                                                             {elem.customerId}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.arrivalTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.serviceTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.startTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.endTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.turnaroundTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.responseTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             {elem.waitTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
                                                             S{elem.server}
                                                         </th>
                                                     </tr>
@@ -329,6 +415,104 @@ function RandomNum() {
                     }
 
 
+                </div>
+            </div>
+            <div className='flex h-1/2'>
+                <div className='flex border border-gray-600 mt-1.5 mb-3 mx-3 rounded-lg flex-row flex-wrap text-white text-lg font-bold w-3/5 p-2 shadow-xl'>
+                    {
+
+                        loading ? (
+                            <div className='flex flex-col justify-center items-center h-full'>
+                                <img src={noDataLogo} className="w-1/12" />
+                                <h2 className='text-xl py-3.5 pl-4 font-semibold'>No Data To Display!</h2>
+                            </div>
+                        ) : (
+                            calculatedData.length === 0 ? (
+                                <div className='flex flex-col justify-center items-center h-full'>
+                                    <img src={noDataLogo} className="w-1/12" />
+                                    <h2 className='text-xl py-3.5 pl-4 font-semibold'>No Data To Display!</h2>
+                                </div>
+                            ) : (
+                                <CanvasJSChart containerProps={{ width: '100%', height: '100%' }} options={options}
+                                /* onRef={ref => this.chart = ref} */
+                                />)
+                        )}
+                </div>
+                <div className='text-white border border-gray-600 grow overflow-y-auto m-3 scrollbar-hide rounded-lg shadow-xl'>
+                    {
+                        loading ? (
+                            <div className='flex flex-col justify-center items-center h-full'>
+                                <img src={noDataLogo} className="w-1/12" />
+                                <h2 className='text-xl py-3.5 pl-4 font-semibold'>No Data To Display!</h2>
+                            </div>
+                        ) : (
+                            performanceObj.length === 0 ? (
+                                <div className='flex flex-col justify-center items-center h-full'>
+                                    <img src={noDataLogo} className="w-1/12" />
+                                    <h2 className='text-xl py-3.5 pl-4 font-semibold'>No Data To Display!</h2>
+                                </div>
+                            ) : (
+                                <div className="relative overflow-x-auto drop-shadow-xl sm:rounded-lg">
+
+                                    {
+                                        performanceObj.map((elem, key) => (
+                                            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                                <caption className="p-3 text-lg font-semibold text-left text-gray-900 bg-white dark:text-white dark:bg-gray-800">
+                                                    Performance Measure for Server {elem.server}
+                                                </caption>
+                                                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                                    <tr>
+                                                        <th scope="col" className="px-3 py-3">
+                                                            Avg Arrival
+                                                        </th>
+                                                        <th scope="col" className="px-3 py-3">
+                                                            Avg Service
+                                                        </th>
+                                                        <th scope="col" className="px-3 py-3">
+                                                            Avg Turnaround
+                                                        </th>
+                                                        <th scope="col" className="px-3 py-3">
+                                                            Avg Wait Time
+                                                        </th>
+                                                        <th scope="col" className="px-3 py-3">
+                                                            Avg Wait Time for Who Wait
+                                                        </th>
+                                                        <th scope="col" className="px-3 py-3">
+                                                            Avg Response
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700" key={key}>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                            {elem.avgArrivalTime}
+                                                        </th>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                            {elem.avgServiceTime}
+                                                        </th>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                            {elem.avgTurnaround}
+                                                        </th>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                            {elem.avgWaitTime}
+                                                        </th>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                            {elem.avgWaitTimeWhoWait}
+                                                        </th>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                            {elem.avgResponseTime}
+                                                        </th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        ))
+                                    }
+                                </div>
+
+                            )
+                        )
+
+                    }
                 </div>
             </div>
         </div>
