@@ -119,7 +119,7 @@ function Home() {
             <SiMicrosoftexcel onClick={()=>{navigate('/graphs')}} className='absolute right-10 text-5xl text-white top-8 hover:text-gray-400'/>
             <div className='bg-gradient-to-bl from-[#21252B] to-[#2A323D] to-[#2D3C55] flex flex-row flex-wrap justify-evenly content-start items-baseline h-full py-5'>
                 <h1 className='text-center text-white text-2xl py-6 font-bold'>Operation Research Simulator</h1>
-                <div className='border-t w-full flex flex-row justify-center items-center py-10'>
+                <div className='border-t w-full flex flex-row justify-center items-center py-6'>
                     <h3 className='text-lg text-white font-bold'>Number of Servers: </h3>
                     <input className='mx-4 rounded-md border border-black p-2 text-md focus:outline-none' onKeyDown={(e) => e.preventDefault()} onChange={(e) => setServerQty(parseInt(e.target.value))} type="number" defaultValue={1} max={6} min={1} />
                 </div>
@@ -173,7 +173,7 @@ function Home() {
                                 />
                             </div>
                         ) : (
-                            <button onClick={calculate} className='rounded-md bg-[#2E71FF] text-white font-bold w-1/4 h-12 mt-10 text-center text-lg'>
+                            <button onClick={calculate} className='rounded-md bg-[#2E71FF] text-white font-bold w-1/4 h-12 text-center text-lg'>
                                 CALCULATE
                             </button>
 

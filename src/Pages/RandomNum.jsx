@@ -184,7 +184,14 @@ function RandomNum() {
                     serverNum = index + 1;
                 }
             }
-            let startTime = arrivals[i] < servers[serverNum] ? servers[serverNum] : arrivals[i];
+            //let startTime = arrivals[i] < servers[serverNum] ? servers[serverNum] : arrivals[i];
+            let startTime;
+            if (arrivals[i] <= servers[serverNum]) {
+              startTime = servers[serverNum];
+            } else {
+              servers[serverNum] = arrivals[i];
+              startTime = arrivals[i];
+            }
             let endTime = startTime + serviceTimes[i];
             let arrival = arrivals[i];
             let serviceTime = serviceTimes[i]
@@ -252,7 +259,7 @@ function RandomNum() {
     return (
         <div className='h-screen bg-gradient-to-bl from-[#21252B] to-[#2A323D] to-[#2D3C55]'>
             <div className='flex h-1/2'>
-                <div className='flex border border-gray-600 m-3 rounded-lg flex-row flex-wrap text-white text-lg font-bold w-1/4 p-2 shadow-xl'>
+                <div className='flex border border-gray-600 m-3 rounded-lg flex-row flex-wrap text-white font-bold w-1/4 p-2 shadow-xl'>
                     <div className='flex justify-start items-center w-full'>
                         <label className='pt-3'>Enter Mean λ</label>
                         <input
@@ -274,7 +281,7 @@ function RandomNum() {
 
                     <label className='pt-3'>Number of Customers</label>
                     <input
-                        className=' px-2 mt-2  rounded-lg bg-white text-black focus:outline-none font-medium'
+                        className=' px-2 mt-2 rounded-lg bg-white text-black focus:outline-none font-medium'
                         placeholder='Enter Number of Customers'
                         type="number"
                         defaultValue={1}
@@ -310,7 +317,7 @@ function RandomNum() {
                             </div>
                         ) : (
                             <>
-                                <button onClick={calculate} className='rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-12 mt-5 mb-2 text-center text-lg'>
+                                <button onClick={calculate} className='rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-10 mt-5 mb-2 text-center text-lg'>
                                     CALCULATE
                                 </button>
                                 {/* <button onClick={() => { console.log(calculatedData) }} className='rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-12 mt-2 mb-7 text-center text-lg'>
@@ -336,11 +343,11 @@ function RandomNum() {
                                 </div>
                             ) : (
                                 <div className="relative overflow-x-auto drop-shadow-xl sm:rounded-lg">
-                                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                        <caption className="p-3 text-lg font-semibold text-left text-gray-900 bg-white dark:text-white dark:bg-gray-800">
+                                    <table className="w-full text-sm text-left text-gray-400">
+                                        <caption className="p-3 text-lg font-semibold text-left text-white bg-gray-800">
                                             Tabular Form
                                         </caption>
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                        <thead className="text-xs text-gray-700 uppercase bg-gray-700 text-gray-400">
                                             <tr>
                                                 <th scope="col" className="px-3 py-3">
                                                     CID
@@ -374,32 +381,32 @@ function RandomNum() {
                                         <tbody>
                                             {
                                                 calculatedData.map((elem, key) => (
-                                                    <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700" key={key}>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                                                    <tr className="border-b bg-gray-800 border-gray-700" key={key}>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white">
                                                             {elem.customerId}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.arrivalTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.serviceTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.startTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.endTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.turnaroundTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.responseTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             {elem.waitTime}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
                                                             S{elem.server}
                                                         </th>
                                                     </tr>
@@ -456,11 +463,11 @@ function RandomNum() {
 
                                     {
                                         performanceObj.map((elem, key) => (
-                                            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                                <caption className="p-3 text-lg font-semibold text-left text-gray-900 bg-white dark:text-white dark:bg-gray-800">
+                                            <table className="w-full text-sm text-left text-gray-400">
+                                                <caption className="p-3 text-lg font-semibold text-left text-white bg-gray-800">
                                                     Performance Measure for Server {elem.server}
                                                 </caption>
-                                                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                                <thead className="text-xs text-gray-700 uppercase bg-gray-700 text-gray-400">
                                                     <tr>
                                                         <th scope="col" className="px-3 py-3">
                                                             Avg Arrival
@@ -483,24 +490,24 @@ function RandomNum() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700" key={key}>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white">
-                                                            {elem.avgArrivalTime}
+                                                    <tr className="border-b bg-gray-800 border-gray-700" key={key}>
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
+                                                            {(Math.round(elem.avgArrivalTime * 100) / 100).toFixed(3)}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
-                                                            {elem.avgServiceTime}
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
+                                                            {(Math.round(elem.avgServiceTime * 100) / 100).toFixed(3)}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
-                                                            {elem.avgTurnaround}
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
+                                                            {(Math.round(elem.avgTurnaround * 100) / 100).toFixed(3)}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
-                                                            {elem.avgWaitTime}
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
+                                                            {(Math.round(elem.avgWaitTime * 100) / 100).toFixed(3)}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
-                                                            {elem.avgWaitTimeWhoWait}
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
+                                                            {(Math.round(elem.avgWaitTimeWhoWait * 100) / 100).toFixed(3)}
                                                         </th>
-                                                        <th scope="row" className="px-3 py-4 font-medium text-gray-900 dark:text-white text-center">
-                                                            {elem.avgResponseTime}
+                                                        <th scope="row" className="px-3 py-4 font-medium text-white text-center">
+                                                            {(Math.round(elem.avgResponseTime * 100) / 100).toFixed(3)}
                                                         </th>
                                                     </tr>
                                                 </tbody>
