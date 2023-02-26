@@ -347,7 +347,7 @@ function RandomNum() {
                                         <caption className="p-3 text-lg font-semibold text-left text-white bg-gray-800">
                                             Tabular Form
                                         </caption>
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-700 text-gray-400">
+                                        <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                             <tr>
                                                 <th scope="col" className="px-3 py-3">
                                                     CID
@@ -467,7 +467,7 @@ function RandomNum() {
                                                 <caption className="p-3 text-lg font-semibold text-left text-white bg-gray-800">
                                                     Performance Measure for Server {elem.server}
                                                 </caption>
-                                                <thead className="text-xs text-gray-700 uppercase bg-gray-700 text-gray-400">
+                                                <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                                     <tr>
                                                         <th scope="col" className="px-3 py-3">
                                                             Avg Arrival
