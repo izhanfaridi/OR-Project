@@ -4,6 +4,9 @@ import { Oval } from "react-loader-spinner";
 import "../Styles/styles.css";
 import noDataLogo from "../Assets/imgs/nodata_svg.svg";
 import CanvasJSReact from "../Assets/canvasjs.react";
+import { chiSqCalculation } from "../Functions_formulas/ChiSqHelperFormulas";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
@@ -13,7 +16,33 @@ function Graphs() {
   const [initialData, setInitialData] = useState([]);
   const [performanceObj, setPerformanceObj] = useState([]);
   const [calculatedData, setCalculatedData] = useState([]);
+  const [serverUtilizations, setServerUtilizations] = useState([]);
+  const [idleTimes, setIdleTimes] = useState([]);
   const [serverQty, setServerQty] = useState(1);
+
+  const notifySuccess = () =>
+    toast.success("Data Follows Poisson Distribution", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
+
+  const notifyFailure = () =>
+    toast.error("Data Does Not Follow Poisson Distribution", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
 
   const options = {
     animationEnabled: true,
@@ -61,15 +90,22 @@ function Graphs() {
       initialRender.current = false;
     } else {
       performanceMeasures();
+      console.log(calculatedData);
     }
   }, [calculatedData]);
 
   const manipulateData = (data) => {
+    // console.log('raw data',data);
     data.forEach((elem, index) => {
+      // console.log(Object.values(elem));
       let obj = {
         customerId: Object.values(elem)[0],
         arrivalTime: Object.values(elem)[1],
         serviceTime: Object.values(elem)[2],
+        interArrival:
+          index === 0
+            ? 0
+            : Object.values(elem)[1] - Object.values(data[index - 1])[1],
         startTime: null,
         endTime: null,
         turnaroundTime: null,
@@ -138,92 +174,118 @@ function Graphs() {
   //     setLoading(false)
   // }
 
+  const chiSqheck = (arr) => {
+    let answersArr = [false, false];
+    for (let i = 0; i < arr.length; i++) {
+      const answer = chiSqCalculation(arr[i]);
+      answersArr[i] = answer;
+    }
+
+    if (answersArr.filter((elem) => !elem).length === 0) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
   const calculate = () => {
+    // console.log("INITAIL WITH IA ====== > ", initialData);
     setCalculatedData([]);
     setPerformanceObj([]);
+    setServerUtilizations([]);
     const arrivals = initialData.map((elem) => {
       return elem.arrivalTime;
     });
     const serviceTimes = initialData.map((elem) => {
       return elem.serviceTime;
     });
-    const servers = new Array(serverQty).fill(0);
-    arrivals.forEach((val, i) => {
-      let serverNum = 0;
-      for (let index = 0; index < servers.length; index++) {
-        if (servers[index] > servers[index + 1]) {
-          serverNum = index + 1;
-        }
-      }
-      //   let startTime = arrivals[i] <= servers[serverNum] ? servers[serverNum] : arrivals[i];
-      let startTime;
-      if (arrivals[i] <= servers[serverNum]) {
-        startTime = servers[serverNum];
-      } else {
-        servers[serverNum] = arrivals[i];
-        startTime = arrivals[i];
-      }
-
-      let endTime = startTime + serviceTimes[i];
-      let arrival = arrivals[i];
-      let serviceTime = serviceTimes[i];
-      let turnaroundTime = endTime - arrival;
-      let waitTime = turnaroundTime - serviceTime;
-      let responseTime = startTime - arrival;
-      let obj = {
-        //interArrival: interArrivals[i],
-        customerId: "C" + (i + 1),
-        arrivalTime: arrival,
-        serviceTime: serviceTimes[i],
-        server: serverNum + 1,
-        startTime,
-        endTime,
-        turnaroundTime,
-        waitTime,
-        responseTime,
-      };
-      servers[serverNum] += serviceTimes[i];
-      setCalculatedData((prev) => [...prev, obj]);
+    const interArrivalTimes = initialData.map((elem) => {
+      return elem.interArrival;
     });
+
+    const isPossson = chiSqheck([interArrivalTimes, serviceTimes]);
+    if (isPossson) {
+      notifySuccess();
+      const servers = new Array(serverQty).fill(0);
+      arrivals.forEach((val, i) => {
+        let serverNum = 0;
+        for (let index = 0; index < servers.length; index++) {
+          if (servers[index] > servers[index + 1]) {
+            serverNum = index + 1;
+          }
+        }
+        //   let startTime = arrivals[i] <= servers[serverNum] ? servers[serverNum] : arrivals[i];
+        let startTime;
+        if (arrivals[i] <= servers[serverNum]) {
+          startTime = servers[serverNum];
+        } else {
+          servers[serverNum] = arrivals[i];
+          startTime = arrivals[i];
+        }
+
+        let endTime = startTime + serviceTimes[i];
+        let arrival = arrivals[i];
+        let serviceTime = serviceTimes[i];
+        let turnaroundTime = endTime - arrival;
+        let waitTime = turnaroundTime - serviceTime;
+        let responseTime = startTime - arrival;
+        let obj = {
+          interArrival: interArrivalTimes[i],
+          customerId: "C" + (i + 1),
+          arrivalTime: arrival,
+          serviceTime: serviceTimes[i],
+          server: serverNum + 1,
+          startTime,
+          endTime,
+          turnaroundTime,
+          waitTime,
+          responseTime,
+        };
+        servers[serverNum] += serviceTimes[i];
+        setCalculatedData((prev) => [...prev, obj]);
+      });
+    } else {
+      notifyFailure();
+    }
   };
 
   const performanceMeasures = () => {
-    for (let i = 1; i <= serverQty; i++) {
-      const array = calculatedData.filter((elem) => elem.server === i);
-      let server = i;
+    if (calculatedData.length > 0) {
+      // const array = calculatedData.filter((elem) => elem.server === i);
+      //let server = i;
       let avgServiceTime =
-        array
+        calculatedData
           .map((elem) => {
             return elem.serviceTime;
           })
           .reduce((partialSum, a) => partialSum + a, 0) / calculatedData.length;
       let avgArrivalTime =
-        array
+        calculatedData
           .map((elem) => {
             return elem.arrivalTime;
           })
           .reduce((partialSum, a) => partialSum + a, 0) / calculatedData.length;
       let avgTurnaround =
-        array
+        calculatedData
           .map((elem) => {
             return elem.turnaroundTime;
           })
           .reduce((partialSum, a) => partialSum + a, 0) / calculatedData.length;
       let avgWaitTime =
-        array
+        calculatedData
           .map((elem) => {
             return elem.waitTime;
           })
           .reduce((partialSum, a) => partialSum + a, 0) / calculatedData.length;
       let avgWaitTimeWhoWait =
-        array
+        calculatedData
           .map((elem) => {
             return elem.waitTime;
           })
           .reduce((partialSum, a) => partialSum + a, 0) /
-        array.filter((elem) => elem.waitTime !== 0).length;
+        calculatedData.filter((elem) => elem.waitTime !== 0).length;
       let avgResponseTime =
-        array
+        calculatedData
           .map((elem) => {
             return elem.responseTime;
           })
@@ -238,16 +300,130 @@ function Graphs() {
           avgWaitTime,
           avgWaitTimeWhoWait,
           avgResponseTime,
-          server,
+          // server,
         },
       ]);
+
+      // for (let i = 1; i <= serverQty; i++) {
+      //   const array = calculatedData.filter((elem) => elem.server === i);
+      //   let server = i;
+      //   let avgServiceTime =
+      //     array
+      //       .map((elem) => {
+      //         return elem.serviceTime;
+      //       })
+      //       .reduce((partialSum, a) => partialSum + a, 0) /
+      //     calculatedData.length;
+      //   let avgArrivalTime =
+      //     array
+      //       .map((elem) => {
+      //         return elem.arrivalTime;
+      //       })
+      //       .reduce((partialSum, a) => partialSum + a, 0) /
+      //     calculatedData.length;
+      //   let avgTurnaround =
+      //     array
+      //       .map((elem) => {
+      //         return elem.turnaroundTime;
+      //       })
+      //       .reduce((partialSum, a) => partialSum + a, 0) /
+      //     calculatedData.length;
+      //   let avgWaitTime =
+      //     array
+      //       .map((elem) => {
+      //         return elem.waitTime;
+      //       })
+      //       .reduce((partialSum, a) => partialSum + a, 0) /
+      //     calculatedData.length;
+      //   let avgWaitTimeWhoWait =
+      //     array
+      //       .map((elem) => {
+      //         return elem.waitTime;
+      //       })
+      //       .reduce((partialSum, a) => partialSum + a, 0) /
+      //     array.filter((elem) => elem.waitTime !== 0).length;
+      //   let avgResponseTime =
+      //     array
+      //       .map((elem) => {
+      //         return elem.responseTime;
+      //       })
+      //       .reduce((partialSum, a) => partialSum + a, 0) /
+      //     calculatedData.length;
+
+      //   setPerformanceObj((prev) => [
+      //     ...prev,
+      //     {
+      //       avgArrivalTime,
+      //       avgServiceTime,
+      //       avgTurnaround,
+      //       avgWaitTime,
+      //       avgWaitTimeWhoWait,
+      //       avgResponseTime,
+      //       server,
+      //     },
+      //   ]);
+      // }
+
+      utilizationCalculation();
+    } else {
+      //do nothing
     }
+  };
+
+  const utilizationCalculation = () => {
+    // let totalTime = 0;
+    // let endTimes = calculatedData.map((elem) => {
+    //   return elem.endTime;
+    // });
+
+    for (let i = 1; i <= serverQty; i++) {
+      let serverData = calculatedData.filter((elem) => elem.server === i);
+      let serviceSum = 0;
+
+      serverData.forEach((elem) => {
+        serviceSum += elem.serviceTime;
+      });
+
+      let totalTime = 0;
+      let endTimes = serverData.map((elem) => {
+        return elem.endTime;
+      });
+      totalTime = Math.max(...endTimes);
+
+      const utilization = serviceSum / totalTime / serverQty;
+
+      setServerUtilizations((prev) => [...prev, utilization]);
+    }
+  };
+
+  const check = () => {
+    const serviceArr = initialData.map((elem) => {
+      return elem.serviceTime;
+    });
+
+    const arrivalArr = initialData.map((elem) => {
+      return elem.arrivalTime;
+    });
+
+    const intArrivalArr = initialData.map((elem) => {
+      return elem.interArrival;
+    });
+
+    // console.log("Arrival Array", arrivalArr);
+    // console.log("Service Array", serviceArr);
+    console.log("interArrival Array", intArrivalArr);
+
+    const answer = chiSqCalculation(intArrivalArr);
+    console.log(answer);
   };
 
   return (
     <div className="h-screen bg-gradient-to-bl from-[#21252B] to-[#2A323D] to-[#2D3C55]">
       <div className="flex h-1/2">
         <div className="flex border border-gray-600 m-4 rounded-lg flex-col text-white font-bold w-1/4 p-2 shadow-xl">
+          <h1 className="text-2xl font-bold text-center text-white justify-self-center w-full my-3 ">
+            M/M/C Simulation
+          </h1>
           <label className="pt-4" htmlFor="upload">
             Upload File
           </label>
@@ -263,6 +439,7 @@ function Graphs() {
             className=" px-2 mt-2 w-1/2 rounded-lg bg-white text-black focus:outline-none font-medium mb-4"
             placeholder="Enter Number of Servers"
             type="number"
+            min={1}
             defaultValue={1}
             onChange={(e) => {
               setServerQty(parseInt(e.target.value));
@@ -286,14 +463,25 @@ function Graphs() {
           ) : (
             <>
               <button
+                // onClick={check}
                 onClick={calculate}
                 className="rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-10 mt-2 mb-7 text-center text-lg"
               >
                 CALCULATE
               </button>
-              {/* <button onClick={() => { console.log(calculatedData) }} className='rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-12 mt-2 mb-7 text-center text-lg'>
-                                    log
-                                </button> */}
+              {/* <button
+                onClick={notifySuccess}
+                className="rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-12 mt-2 mb-7 text-center text-lg"
+              >
+                Notify!
+              </button>
+              <button
+                onClick={notifyFailure}
+                className="rounded-md bg-[#2E71FF] text-white font-bold w-1/2 h-12 mt-2 mb-7 text-center text-lg"
+              >
+                Notify ERR!
+              </button> */}
+              <ToastContainer />
             </>
           )}
         </div>
@@ -459,9 +647,13 @@ function Graphs() {
           ) : (
             <div className="relative overflow-x-auto drop-shadow-xl sm:rounded-lg">
               {performanceObj.map((elem, key) => (
-                <table className="w-full text-sm text-left text-gray-400">
+                <table
+                  key={key}
+                  className="w-full text-sm text-left text-gray-400"
+                >
                   <caption className="p-3 text-lg font-semibold text-left text-white bg-gray-800">
-                    Performance Measure for Server {elem.server}
+                    {/* Performance Measure for Server {elem.server} */}
+                    Performance Measeures
                   </caption>
                   <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                     <tr>
@@ -535,6 +727,36 @@ function Graphs() {
                         {(Math.round(elem.avgResponseTime * 100) / 100).toFixed(
                           3
                         )}
+                      </th>
+                    </tr>
+                  </tbody>
+                </table>
+              ))}
+              {serverUtilizations.map((elem, index) => (
+                <table
+                  key={index}
+                  className="w-full text-sm text-left text-gray-400"
+                >
+                  <caption className="p-3 text-lg font-semibold text-left text-white bg-gray-800">
+                    Utilization For Server {index + 1}
+                  </caption>
+                  <thead className="text-xs uppercase bg-gray-700 text-gray-400">
+                    <tr>
+                      <th scope="col" className="px-3 py-3">
+                        Server Utilization
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      className="border-b bg-gray-800 border-gray-700"
+                      key={index}
+                    >
+                      <th
+                        scope="row"
+                        className="px-3 py-4 font-medium text-white text-center"
+                      >
+                        {elem}
                       </th>
                     </tr>
                   </tbody>
